@@ -32,19 +32,88 @@ Code Change → Parse → Graph → Narrate → Diagram → Document
 
 ## Quick Start
 
-```bash
-# Install
-pip install designscribe
+### 1. Install (once)
 
-# Initialize in your project
+```bash
+pip install designscribe
+```
+
+### 2. Set Up Your Project
+
+```bash
 cd your-project
+
+# Scan your codebase and build the dependency graph
 designscribe init ./src
 
-# Make some changes with your coding agent, then:
-designscribe run
+# Create a config file (optional — defaults work fine)
+designscribe config
+```
 
-# Or watch continuously
+### 3. Enable Auto-Documentation
+
+Choose your agent:
+
+**Claude Code** — add to `CLAUDE.md`:
+```markdown
+## Architecture Documentation
+After creating or modifying Python files, run:
+  designscribe record <changed_files> --task "what you just did"
+```
+
+**Codex CLI** — add to `AGENTS.md`:
+```markdown
+## After Writing Code
+After creating or modifying files, always run:
+  designscribe record <changed_files> --task "description of what you did"
+```
+
+**Cursor** — add to `.cursor/mcp.json`:
+```json
+{
+  "mcpServers": {
+    "designscribe": {
+      "command": "designscribe",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+**Git hook** — auto-document on every commit:
+```bash
+cat > .git/hooks/post-commit << 'EOF'
+#!/bin/bash
+cd "$(git rev-parse --show-toplevel)"
+CHANGED=$(git diff --name-only HEAD~1 HEAD -- '*.py')
+[ -n "$CHANGED" ] && designscribe record $CHANGED --task "$(git log -1 --pretty=%B)" --no-narrate
+EOF
+chmod +x .git/hooks/post-commit
+```
+
+### 4. Start Coding
+
+That's it. Now when your agent writes code, it will automatically:
+- Detect what changed (AST-level, not just text)
+- Update the dependency graph
+- Generate an LLM narration with design rationale
+- Render an architecture diagram
+- Append to `living-arch.md`
+
+### 5. Manual Usage
+
+You can also run DesignScribe manually anytime:
+
+```bash
+# Full pipeline on current changes
+designscribe run --task "what I just built"
+
+# Watch mode (runs in background)
 designscribe watch ./src
+
+# Query the dependency graph
+designscribe graph show
+designscribe graph query src/auth.py
 ```
 
 ## Commands
