@@ -264,27 +264,29 @@ DesignScribe composes existing open-source tools:
 
 ## Roadmap
 
-### Phase 1: Core Pipeline (MVP) ← current
+### Phase 1: Core Pipeline (MVP) ✅
 - [x] Project structure & CLI scaffold
-- [ ] Tree-sitter AST differ (Python support)
-- [ ] NetworkX dependency graph
-- [ ] LLM narration via OpenRouter
-- [ ] Mermaid diagram rendering
-- [ ] Living architecture doc generation
-- [ ] `designscribe init` + `designscribe run`
+- [x] Tree-sitter AST differ (Python support)
+- [x] NetworkX dependency graph (scan, query, impact analysis)
+- [x] LLM narration via OpenRouter (gpt-4o-mini default, auto-fallback)
+- [x] Mermaid diagram rendering (mmdc)
+- [x] Living architecture doc generation
+- [x] `designscribe init` + `designscribe run`
+- [x] Event log (append-only JSONL)
 
-### Phase 2: Agent Integration
-- [ ] `designscribe watch` — file watcher daemon
+### Phase 2: Agent Integration 🚧
+- [x] `designscribe watch` — file watcher daemon with debouncing
 - [ ] `designscribe record` — agent-callable hook
 - [ ] CLAUDE.md / AGENTS.md integration snippets
 - [ ] MCP server mode for Cursor, Codex, etc.
 
 ### Phase 3: Intelligence
-- [ ] Incremental graph updates
-- [ ] Smart debouncing (batch related changes)
+- [x] Incremental graph updates (partial — re-parses changed files)
+- [x] Smart debouncing (configurable ms in watcher)
 - [ ] Impact analysis (downstream effects)
 - [ ] Design pattern detection
 - [ ] Multi-language support (TypeScript, Go, Rust)
+- [ ] Caching narrations to reduce LLM costs
 
 ### Phase 4: Polish
 - [ ] HTML output with interactive diagrams
