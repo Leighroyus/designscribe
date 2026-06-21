@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+
+# DesignScribe runtime
+.designscribe/
+diagrams/*.png
+diagrams/*.svg
+diagrams/*.mmd
+living-arch.md
+
+# Virtual env
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node (mmdc)
+node_modules/
+package-lock.json

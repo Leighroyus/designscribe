@@ -1,0 +1,23 @@
+[project]
+name = "designscribe"
+version = "0.1.0"
+description = "Architecture docs as a side effect of coding"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+dependencies = [
+    "tree-sitter>=0.23.0",
+    "tree-sitter-language-pack>=0.7.0",
+    "networkx>=3.0",
+    "gitpython>=3.1.0",
+    "watchdog>=4.0.0",
+    "typer>=0.12.0",
+    "rich>=13.0.0",
+]
+
+[project.scripts]
+designscribe = "designscribe.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
