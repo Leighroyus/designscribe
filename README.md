@@ -61,6 +61,41 @@ designscribe watch ./src
 | `designscribe record file1.py --task "Added auth"` | Agent hook — record changes with context |
 | `designscribe graph show` | Display the dependency graph |
 | `designscribe graph query src/auth.py` | What does this file depend on? |
+| `designscribe mcp` | Start MCP server for agent integration |
+
+## Quick Test
+
+After install, try it on any Python project:
+
+```bash
+# 1. Scan the codebase
+designscribe init ./src
+
+# 2. Test the full pipeline on one file
+designscribe diff --file src/some_module.py
+designscribe narrate --task "Testing DesignScribe"
+designscribe diagram
+designscribe render
+
+# 3. Check the output
+cat living-arch.md
+ls diagrams/
+
+# 4. Or do it all in one shot
+designscribe run --task "Full test run"
+
+# 5. Try watch mode (Ctrl+C to stop)
+designscribe watch ./src
+
+# 6. Query the graph
+designscribe graph show
+designscribe graph stats
+```
+
+**Prerequisites:**
+- Python 3.10+
+- `OPENROUTER_API_KEY` environment variable (for LLM narration)
+- `mmdc` for PNG diagrams (`pip install mermaid-cli`)
 
 ## Output
 
