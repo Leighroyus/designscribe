@@ -188,36 +188,50 @@ The LLM generates Mermaid syntax, which is rendered to PNG/SVG via `mmdc` (Merma
 
 Every narration is appended to `living-arch.md` — a cumulative architecture log that grows with your codebase. It's the single source of truth for "why does this code exist?"
 
-## Agent Integration
+## Agent Integration — Auto-Document As You Code
 
-See [AGENT_INTEGRATION.md](AGENT_INTEGRATION.md) for detailed setup guides.
+DesignScribe can run **automatically** as your coding agent works. Here's how to set it up for each agent.
 
-### Claude Code
+### Claude Code (Recommended)
 
-Add to your `CLAUDE.md`:
+Add this to your project's `CLAUDE.md` file. Claude Code reads this at the start of every session:
+
+```markdown
+## Architecture Documentation (DesignScribe)
+
+After creating or modifying Python files, run DesignScribe to document the changes:
+
+  designscribe record <changed_files> --task "what you just did"
+
+Example:
+  designscribe record src/auth.py src/models/user.py --task "Added OAuth2 login flow"
+
+This will:
+1. Analyze the structural changes (functions, classes, imports)
+2. Update the dependency graph
+3. Generate an LLM narration of the design decisions
+4. Render an architecture diagram
+5. Update living-arch.md
+```
+
+Claude Code will then automatically call `designscribe record` after each batch of file writes.
+
+### Codex CLI
+
+Add to your `AGENTS.md` (Codex reads this as project instructions):
 
 ```markdown
 ## After Writing Code
-After creating or modifying files, run:
-  designscribe record <changed_files> --task "what you did"
+
+After creating or modifying files, always run:
+  designscribe record <changed_files> --task "description of what you did"
+
+The living architecture doc is at living-arch.md — read it for project context.
 ```
 
-### MCP Server (Cursor, Codex, etc.)
+### Cursor / VS Code (MCP)
 
-DesignScribe runs as an MCP server for agent integration:
-
-```bash
-designscribe mcp  # Start MCP server (stdio)
-```
-
-Exposed tools:
-- `designscribe_record` — record file changes and update docs
-- `designscribe_narrate` — generate LLM narration
-- `designscribe_graph` — query dependency graph
-- `designscribe_architecture` — retrieve living architecture doc
-- `designscribe_diff` — show structural changes
-
-Add to your MCP config (e.g., `.cursor/mcp.json`):
+Cursor can call DesignScribe via MCP. Add to `.cursor/mcp.json`:
 
 ```json
 {
@@ -230,7 +244,16 @@ Add to your MCP config (e.g., `.cursor/mcp.json`):
 }
 ```
 
-### Git Hooks
+Then add to `.cursorrules`:
+
+```
+After writing code, call the designscribe_record tool with the changed files and a task description.
+The living architecture doc is at living-arch.md — read it for project context.
+```
+
+### Git Hooks (Automatic on Commit)
+
+For any agent, add a post-commit hook:
 
 ```bash
 # .git/hooks/post-commit
@@ -238,6 +261,32 @@ cd "$(git rev-parse --show-toplevel)"
 CHANGED=$(git diff --name-only HEAD~1 HEAD -- '*.py')
 [ -n "$CHANGED" ] && designscribe record $CHANGED --task "$(git log -1 --pretty=%B)" --no-narrate
 ```
+
+Make it executable: `chmod +x .git/hooks/post-commit`
+
+### Watch Mode (Background)
+
+Run alongside your agent for continuous documentation:
+
+```bash
+designscribe watch ./src --task "feature development"
+```
+
+This monitors for file changes and auto-generates docs after a 2-second debounce.
+
+### What Gets Generated
+
+Each time the agent records changes, DesignScribe:
+
+1. **Structural Diff** — what functions/classes/imports changed (AST, not text)
+2. **Dependency Graph** — updated with new code relationships
+3. **LLM Narration** — summary, rationale, data flow, impact analysis
+4. **Architecture Diagram** — Mermaid flowchart rendered to PNG
+5. **Living Doc** — appended to `living-arch.md`
+
+After a coding session, `living-arch.md` contains a complete record of every design decision.
+
+See [AGENT_INTEGRATION.md](AGENT_INTEGRATION.md) for more detailed setup guides.
 
 ## Configuration
 
