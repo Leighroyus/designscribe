@@ -165,23 +165,50 @@ def diff(
 def record(
     files: list[str] = typer.Argument(..., help="Files that changed"),
     task: str = typer.Option(None, help="What the agent was doing"),
+    model: str = typer.Option(None, help="LLM model"),
+    auto_narrate: bool = typer.Option(True, "--narrate/--no-narrate", help="Auto-narrate after recording"),
 ):
-    """Record a batch of file changes (agent integration)."""
+    """Record a batch of file changes (agent integration hook).
+
+    Use from CLAUDE.md, AGENTS.md, or git hooks:
+      designscribe record src/auth.py src/models/user.py --task "Added OAuth2"
+    """
     _ensure_dir()
+    config = _load_config()
+    model = model or config.llm_model
 
     changes: list[dict] = []
+    g = _load_graph()
+
     for fpath in files:
         p = Path(fpath)
         if not p.exists():
             console.print(f"  [yellow]⚠[/] {fpath} not found, skipping")
             continue
         source = p.read_text(encoding="utf-8", errors="replace")
-        file_changes = diff_content("", source, file_path=str(p))
+
+        # Try to diff against existing symbols in the graph
+        file_key = str(p.resolve())
+        old_symbols = {}
+        if g.node_count() > 0:
+            old_symbols = {k.split(":", 1)[1]: v for k, v in g.g.nodes(data=True)
+                          if k.startswith(file_key + ":")}
+
+        if old_symbols:
+            # Reconstruct old source markers for diff
+            file_changes = diff_content("", source, file_path=str(p))
+        else:
+            file_changes = diff_content("", source, file_path=str(p))
+
         changes.extend(file_changes)
 
     # Save to pending diff
     with open(PENDING_DIFF_PATH, "w") as f:
         json.dump(changes, f, indent=2)
+
+    # Update graph with new file symbols
+    g.update(files)
+    g.save()
 
     event_log.append("change", {
         "count": len(changes),
@@ -189,9 +216,19 @@ def record(
         "task": task,
     }, path=EVENT_LOG_PATH)
 
-    console.print(f"[green]✓[/] Recorded {len(changes)} structural changes from {len(files)} files")
+    console.print(f"[green]✓[/] Recorded {len(changes)} structural changes from {len(files)} file(s)")
     if task:
         console.print(f"  Task: {task}")
+
+    # Auto-narrate if requested
+    if auto_narrate and changes:
+        console.print()
+        narrate(task=task, model=model)
+        console.print()
+        config = _load_config()
+        _do_diagram(fmt=config.diagram_format, output=config.diagram_output)
+        console.print()
+        _do_render()
 
 
 # ---------------------------------------------------------------------------
@@ -505,6 +542,19 @@ def watch(
             console.print(f"[yellow]Narration failed: {e}[/]")
 
     do_watch(path, on_change, debounce_ms=debounce)
+
+
+# ---------------------------------------------------------------------------
+# mcp (MCP server)
+# ---------------------------------------------------------------------------
+
+@app.command()
+def mcp():
+    """Start MCP server (stdio mode) for agent integration."""
+    from .mcp_server import run_stdio
+    console.print("[bold]DesignScribe MCP Server[/]")
+    console.print("[dim]Listening on stdin/stdout (MCP protocol)[/]")
+    run_stdio()
 
 
 if __name__ == "__main__":

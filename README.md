@@ -155,6 +155,8 @@ Every narration is appended to `living-arch.md` — a cumulative architecture lo
 
 ## Agent Integration
 
+See [AGENT_INTEGRATION.md](AGENT_INTEGRATION.md) for detailed setup guides.
+
 ### Claude Code
 
 Add to your `CLAUDE.md`:
@@ -165,18 +167,41 @@ After creating or modifying files, run:
   designscribe record <changed_files> --task "what you did"
 ```
 
-### Cursor / Codex / Other MCP Agents
+### MCP Server (Cursor, Codex, etc.)
 
-DesignScribe can run as an MCP server (Phase 2), exposing tools like:
-- `record_change` — record file changes
-- `get_architecture` — retrieve current architecture doc
-- `query_dependencies` — explore the dependency graph
+DesignScribe runs as an MCP server for agent integration:
+
+```bash
+designscribe mcp  # Start MCP server (stdio)
+```
+
+Exposed tools:
+- `designscribe_record` — record file changes and update docs
+- `designscribe_narrate` — generate LLM narration
+- `designscribe_graph` — query dependency graph
+- `designscribe_architecture` — retrieve living architecture doc
+- `designscribe_diff` — show structural changes
+
+Add to your MCP config (e.g., `.cursor/mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "designscribe": {
+      "command": "designscribe",
+      "args": ["mcp"]
+    }
+  }
+}
+```
 
 ### Git Hooks
 
 ```bash
 # .git/hooks/post-commit
-cd /path/to/project && designscribe diff HEAD~1 && designscribe narrate && designscribe render
+cd "$(git rev-parse --show-toplevel)"
+CHANGED=$(git diff --name-only HEAD~1 HEAD -- '*.py')
+[ -n "$CHANGED" ] && designscribe record $CHANGED --task "$(git log -1 --pretty=%B)" --no-narrate
 ```
 
 ## Configuration
@@ -192,7 +217,7 @@ cd /path/to/project && designscribe diff HEAD~1 && designscribe narrate && desig
   },
   "llm": {
     "provider": "openrouter",
-    "model": "xiaomi/mimo-v2.5-pro",
+    "model": "openai/gpt-4o-mini",
     "api_key_env": "OPENROUTER_API_KEY"
   },
   "diagrams": {
@@ -274,11 +299,11 @@ DesignScribe composes existing open-source tools:
 - [x] `designscribe init` + `designscribe run`
 - [x] Event log (append-only JSONL)
 
-### Phase 2: Agent Integration 🚧
+### Phase 2: Agent Integration ✅
 - [x] `designscribe watch` — file watcher daemon with debouncing
-- [ ] `designscribe record` — agent-callable hook
-- [ ] CLAUDE.md / AGENTS.md integration snippets
-- [ ] MCP server mode for Cursor, Codex, etc.
+- [x] `designscribe record` — agent-callable hook with auto-narrate
+- [x] CLAUDE.md / AGENTS.md integration snippets (AGENT_INTEGRATION.md)
+- [x] MCP server mode for Cursor, Codex, etc. (`designscribe mcp`)
 
 ### Phase 3: Intelligence
 - [x] Incremental graph updates (partial — re-parses changed files)
